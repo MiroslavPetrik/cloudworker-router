@@ -2,19 +2,23 @@ const Router = require('../src');
 
 const router = new Router();
 router.get('/', async (ctx) => {
-    ctx.body = 'Hello world!';
-    ctx.status = 200;
+  ctx.body = 'Root';
+  ctx.status = 200;
+});
+
+router.get('/wild(.*)', async (ctx) => {
+  ctx.body = 'Wildcard..';
+  ctx.status = 200;
 });
 
 router.get('/hello', async (ctx) => {
-    ctx.body = `Hello ${ctx.query.get('name')}!`;
-    ctx.status = 200;
+  ctx.body = `Hello ${ctx.query.get('name')}!`;
+  ctx.status = 200;
 });
 
-
 router.get('/hello/:name', async (ctx) => {
-    ctx.body = `Hello ${ctx.params.name}!`;
-    ctx.status = 200;
+  ctx.body = `Hello ${ctx.params.name}!`;
+  ctx.status = 200;
 });
 
 /**

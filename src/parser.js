@@ -1,4 +1,6 @@
-function parseRoute({ host = '.*', path = '.*', method = ['.*'], handler, data }) {
+const pathToRegexp = require('path-to-regexp');
+
+function parseRoute({ host = '.*', path = '/*', method = ['.*'], handler, data }) {
   const hostVariables = [];
   const pathVariables = [];
 
@@ -9,20 +11,8 @@ function parseRoute({ host = '.*', path = '.*', method = ['.*'], handler, data }
       return '([^.]+)';
     });
 
-  // Then parse the variables in the path
-  const pathRegexpString = path.replace(/(:([^/]+))/g, ($1, $2, $3) => {
-    // Check for wildcard parameters
-    if ($3.slice(-1) === '*') {
-      pathVariables.push($3.slice(0, $3.length - 1));
-      return '(.*)';
-    }
-
-    pathVariables.push($3);
-    return '([^/]*)';
-  });
-
   const hostRegex = new RegExp(`^${hostRegexpString}$`, 'i');
-  const pathRegex = new RegExp(`^${pathRegexpString}$`, 'i');
+  const pathRegex = pathToRegexp(path, pathVariables);
   const methodRegex = new RegExp(`^${method.join('|')}$`, 'i');
 
   return {

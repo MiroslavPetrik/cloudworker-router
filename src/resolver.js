@@ -1,14 +1,13 @@
-function getParams(req, route) {
+function getParams(req, pathMatch, route) {
   const params = {};
 
-  const hostParamsMatch = route.host.exec(req.host);
+  const hostMatch = route.host.exec(req.host);
   route.hostVariables.forEach((name, index) => {
-    params[name] = hostParamsMatch[index + 1];
+    params[name] = hostMatch[index + 1];
   });
 
-  const pathParamsMatch = route.path.exec(req.path);
-  route.pathVariables.forEach((name, index) => {
-    params[name] = pathParamsMatch[index + 1];
+  route.pathVariables.forEach((pathVariable, index) => {
+    params[pathVariable.name] = pathMatch[index + 1];
   });
 
   return params;
@@ -20,31 +19,33 @@ function getParams(req, route) {
  * @param {*} request
  */
 function testPath(route, request) {
-  // Check the method and path
-  return (
-    route.method.test(request.method)
-    && route.host.test(request.host)
-    && route.path.test(request.path)
-  );
+  // Check the method and host first
+  if (!route.method.test(request.method) || !route.host.test(request.host)) {
+    return null;
+  }
+
+  return route.path.exec(request.path);
 }
 
 async function recurseRoutes(ctx, routes) {
   const [route, ...nextRoutes] = routes;
   if (!route) {
     // eslint-disable-next-line
-    return new Response("NOT_FOUND", {
+    return new Response('NOT_FOUND', {
       status: 404,
     });
   }
 
-  if (!testPath(route, ctx.request)) {
+  const match = testPath(route, ctx.request);
+
+  if (!match) {
     return recurseRoutes(ctx, nextRoutes);
   }
 
-  ctx.params = getParams(ctx.request, route);
+  ctx.params = getParams(ctx.request, match, route);
 
   try {
-    return route.handler(ctx, async result => recurseRoutes(result, nextRoutes));
+    return route.handler(ctx, async (result) => recurseRoutes(result, nextRoutes));
   } catch (err) {
     err.route = route.handler.name;
     throw err;
